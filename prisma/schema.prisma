@@ -1,0 +1,210 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  phone     String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  paymentEvents       PaymentEvent[]
+  checkoutSessions    CheckoutSession[]
+  subscriptions       Subscription[]
+  recoveryCases       RecoveryCase[]
+  communicationEvents CommunicationEvent[]
+
+  @@map("customer")
+}
+
+model WebhookEvent {
+  id              String    @id @default(cuid())
+  razorpayEventId String    @unique @map("razorpay_event_id")
+  eventType       String    @map("event_type")
+  accountId       String?   @map("account_id")
+  payload         Json
+  receivedAt      DateTime  @default(now()) @map("received_at")
+  processedAt     DateTime? @map("processed_at")
+
+  @@map("webhook_event")
+}
+
+model PaymentEvent {
+  id                String    @id @default(cuid())
+  razorpayPaymentId String    @map("razorpay_payment_id")
+  razorpayOrderId   String?   @map("razorpay_order_id")
+  eventType         String    @map("event_type")
+  customerId        String?   @map("customer_id")
+  customer          Customer? @relation(fields: [customerId], references: [id])
+  amount            Int
+  currency          String
+  method            String?
+  status            String
+  errorCode         String?   @map("error_code")
+  errorDescription  String?   @map("error_description")
+  errorReason       String?   @map("error_reason")
+  errorSource       String?   @map("error_source")
+  errorStep         String?   @map("error_step")
+  contact           String?
+  email             String?
+  razorpayCreatedAt DateTime  @map("razorpay_created_at")
+  rawPayload        Json      @map("raw_payload")
+  createdAt         DateTime  @default(now()) @map("created_at")
+
+  @@index([razorpayPaymentId])
+  @@index([customerId])
+  @@map("payment_event")
+}
+
+model CheckoutSession {
+  id                    String    @id @default(cuid())
+  razorpayOrderId       String    @unique @map("razorpay_order_id")
+  customerId            String?   @map("customer_id")
+  customer              Customer? @relation(fields: [customerId], references: [id])
+  amount                Int
+  amountPaid            Int       @map("amount_paid")
+  amountDue             Int       @map("amount_due")
+  currency              String
+  receipt               String?
+  status                String
+  attempts              Int
+  notes                 Json?
+  cartValue             Int?      @map("cart_value")
+  itemsSummary          String?   @map("items_summary")
+  paymentMethodSelected String?   @map("payment_method_selected")
+  frontendSessionId     String?   @map("frontend_session_id")
+  createdAt             DateTime  @map("created_at")
+  lastCheckedAt         DateTime? @map("last_checked_at")
+  abandonedAt           DateTime? @map("abandoned_at")
+  recoveredAt           DateTime? @map("recovered_at")
+
+  @@index([customerId])
+  @@index([status])
+  @@map("checkout_session")
+}
+
+model Subscription {
+  id                     String    @id @default(cuid())
+  razorpaySubscriptionId String    @unique @map("razorpay_subscription_id")
+  customerId             String?   @map("customer_id")
+  customer               Customer? @relation(fields: [customerId], references: [id])
+  planId                 String    @map("plan_id")
+  status                 String
+  authAttempts           Int       @default(0) @map("auth_attempts")
+  totalCount             Int?      @map("total_count")
+  paidCount              Int?      @map("paid_count")
+  remainingCount         Int?      @map("remaining_count")
+  chargeAt               DateTime? @map("charge_at")
+  currentStart           DateTime? @map("current_start")
+  currentEnd             DateTime? @map("current_end")
+  lastFailureCode        String?   @map("last_failure_code")
+  lastFailureReason      String?   @map("last_failure_reason")
+  createdAt              DateTime  @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+
+  @@index([customerId])
+  @@index([status])
+  @@map("subscription")
+}
+
+model RecoveryCase {
+  id                String    @id @default(cuid())
+  pipeline          String
+  entityType        String    @map("entity_type")
+  sourceId          String    @map("source_id")
+  customerId        String?   @map("customer_id")
+  customer          Customer? @relation(fields: [customerId], references: [id])
+  amount            Int?
+  diagnosis         String?
+  diagnosisEvidence Json?     @map("diagnosis_evidence")
+  status            String    @default("open")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  resolvedAt        DateTime? @map("resolved_at")
+
+  recoveryActions RecoveryAction[]
+
+  @@index([customerId])
+  @@index([status])
+  @@map("recovery_case")
+}
+
+model RecoveryAction {
+  id              String       @id @default(cuid())
+  recoveryCaseId  String       @map("recovery_case_id")
+  recoveryCase    RecoveryCase @relation(fields: [recoveryCaseId], references: [id])
+  actionType      String       @map("action_type")
+  decisionJson    Json         @map("decision_json")
+  gateResult      Json         @map("gate_result")
+  status          String
+  outcome         String?
+  amountRecovered Int?         @map("amount_recovered")
+  executedAt      DateTime?    @map("executed_at")
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  communicationEvents CommunicationEvent[]
+
+  @@unique([recoveryCaseId, actionType])
+  @@map("recovery_action")
+}
+
+model CommunicationEvent {
+  id                String          @id @default(cuid())
+  recoveryActionId  String?         @map("recovery_action_id")
+  recoveryAction    RecoveryAction? @relation(fields: [recoveryActionId], references: [id])
+  customerId        String?         @map("customer_id")
+  customer          Customer?       @relation(fields: [customerId], references: [id])
+  channel           String
+  providerMessageId String?         @map("provider_message_id")
+  subject           String?
+  status            String
+  sentAt            DateTime?       @map("sent_at")
+  createdAt         DateTime        @default(now()) @map("created_at")
+
+  @@index([customerId])
+  @@map("communication_event")
+}
+
+model Policy {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  pipeline  String
+  ruleType  String   @map("rule_type")
+  config    Json
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("policy")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id")
+  actor      String
+  action     String
+  detail     Json
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@map("audit_log")
+}
+
+model MetricSnapshot {
+  id              String   @id @default(cuid())
+  pipeline        String
+  windowStart     DateTime @map("window_start")
+  windowEnd       DateTime @map("window_end")
+  amountRecovered Int      @map("amount_recovered")
+  caseCount       Int      @map("case_count")
+  recoveredCount  Int      @map("recovered_count")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@map("metric_snapshot")
+}

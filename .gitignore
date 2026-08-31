@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local project context docs — not for the public repo
+ARCHITECTURE.md
+AGENTS.md
+CLAUDE.md
+DESIGN.md
+
+!.env.example.claude/

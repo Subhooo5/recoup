@@ -1,0 +1,8 @@
+<svg viewBox="0 0 340 120" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(16,12) scale(0.4)">
+    <path d="M55 110 L100 165" stroke="#6366F1" stroke-width="28" stroke-linecap="round" fill="none"/>
+    <path d="M100 165 L170.17 76.36" stroke="#10B981" stroke-width="28" stroke-linecap="round" fill="none"/>
+    <path d="M195 45 L187.42 90.02 L152.92 62.70 Z" fill="#10B981"/>
+  </g>
+  <text x="132" y="72" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-weight="700" font-size="44" fill="currentColor">Recoup</text>
+</svg>
