@@ -16,13 +16,13 @@ const daysFromNow = (days: number) =>
 
 const seedCustomers = [
   {
-    name: "Aarav Mehta",
-    email: "demo.customer.1@recoup-app.dev",
-    phone: "+919000000001",
+    name: "Subhodeep Chatterjee",
+    email: "subhodeep17102005@gmail.com",
+    phone: "+917980564106",
     paymentEvents: [
       {
-        razorpayPaymentId: "pay_DemoSeedAarav01",
-        razorpayOrderId: "order_DemoSeedAarav01",
+        razorpayPaymentId: "pay_DemoSeedSubho01",
+        razorpayOrderId: "order_DemoSeedSubho01",
         eventType: "payment.failed",
         amount: 249900,
         currency: "INR",
@@ -36,8 +36,8 @@ const seedCustomers = [
         razorpayCreatedAt: daysAgo(9),
       },
       {
-        razorpayPaymentId: "pay_DemoSeedAarav02",
-        razorpayOrderId: "order_DemoSeedAarav01",
+        razorpayPaymentId: "pay_DemoSeedSubho02",
+        razorpayOrderId: "order_DemoSeedSubho01",
         eventType: "payment.captured",
         amount: 249900,
         currency: "INR",
@@ -53,18 +53,18 @@ const seedCustomers = [
     ],
     checkoutSessions: [
       {
-        razorpayOrderId: "order_DemoSeedAarav01",
+        razorpayOrderId: "order_DemoSeedSubho01",
         amount: 249900,
         amountPaid: 249900,
         amountDue: 0,
         currency: "INR",
-        receipt: "receipt_demo_aarav_01",
+        receipt: "receipt_demo_subho_01",
         status: "paid",
         attempts: 2,
         cartValue: 249900,
         itemsSummary: "Noise cancelling headphones x1",
         paymentMethodSelected: "upi",
-        frontendSessionId: "session_demo_aarav_01",
+        frontendSessionId: "session_demo_subho_01",
         createdAt: daysAgo(9),
         lastCheckedAt: daysAgo(9),
         abandonedAt: null,
@@ -72,8 +72,8 @@ const seedCustomers = [
       },
     ],
     subscription: {
-      razorpaySubscriptionId: "sub_DemoSeedAarav01",
-      planId: "plan_DemoSeedStandard",
+      razorpaySubscriptionId: "sub_DemoSeedSubho01",
+      planId: "plan_TWVBVDQnKZTLqe",
       status: "active",
       authAttempts: 0,
       totalCount: 12,
@@ -89,7 +89,7 @@ const seedCustomers = [
   },
   {
     name: "Diya Sharma",
-    email: "demo.customer.2@recoup-app.dev",
+    email: "subhodeepop@gmail.com",
     phone: "+919000000002",
     paymentEvents: [
       {
@@ -163,7 +163,7 @@ const seedCustomers = [
     ],
     subscription: {
       razorpaySubscriptionId: "sub_DemoSeedDiya01",
-      planId: "plan_DemoSeedStandard",
+      planId: "plan_TXDKJnhlk5TFpN",
       status: "active",
       authAttempts: 0,
       totalCount: 12,
@@ -235,7 +235,7 @@ const seedCustomers = [
     ],
     subscription: {
       razorpaySubscriptionId: "sub_DemoSeedRohan01",
-      planId: "plan_DemoSeedPremium",
+      planId: "plan_TXDKjTbXlrmL7U",
       status: "active",
       authAttempts: 2,
       totalCount: 24,
@@ -325,7 +325,7 @@ const seedCustomers = [
     ],
     subscription: {
       razorpaySubscriptionId: "sub_DemoSeedAnanya01",
-      planId: "plan_DemoSeedPremium",
+      planId: "plan_TXDKxt4xHcqvmT",
       status: "active",
       authAttempts: 0,
       totalCount: 24,
@@ -397,7 +397,7 @@ const seedCustomers = [
     ],
     subscription: {
       razorpaySubscriptionId: "sub_DemoSeedKabir01",
-      planId: "plan_DemoSeedStandard",
+      planId: "plan_TXDM7EOD0I52PE",
       status: "active",
       authAttempts: 0,
       totalCount: 12,
@@ -410,6 +410,39 @@ const seedCustomers = [
       lastFailureReason: null,
       createdAt: daysAgo(33),
     },
+  },
+];
+
+const seedPolicies = [
+  {
+    name: "contact-cooldown-hours",
+    pipeline: "all",
+    ruleType: "cooldown",
+    config: { hours: 24 },
+  },
+  {
+    name: "max-actions-per-case",
+    pipeline: "all",
+    ruleType: "attempt_cap",
+    config: { maxActions: 3 },
+  },
+  {
+    name: "confidence-auto-execute",
+    pipeline: "all",
+    ruleType: "confidence",
+    config: { minimumConfidence: 0.7 },
+  },
+  {
+    name: "minimum-recoverable-amount",
+    pipeline: "all",
+    ruleType: "amount",
+    config: { minimumPaise: 10000 },
+  },
+  {
+    name: "subscription-retry-ceiling",
+    pipeline: "failed-subscription",
+    ruleType: "retry_cap",
+    config: { maxAuthAttempts: 4 },
   },
 ];
 
@@ -562,8 +595,33 @@ const main = async () => {
     );
   }
 
+  for (const seedPolicy of seedPolicies) {
+    await prisma.policy.upsert({
+      where: { name: seedPolicy.name },
+      update: {
+        pipeline: seedPolicy.pipeline,
+        ruleType: seedPolicy.ruleType,
+        config: seedPolicy.config,
+        active: true,
+      },
+      create: {
+        name: seedPolicy.name,
+        pipeline: seedPolicy.pipeline,
+        ruleType: seedPolicy.ruleType,
+        config: seedPolicy.config,
+        active: true,
+      },
+    });
+
+    console.log(
+      `Seeded policy ${seedPolicy.name} (${seedPolicy.ruleType}, ${seedPolicy.pipeline})`,
+    );
+  }
+
   console.log("");
-  console.log(`Seed complete for ${seedCustomers.length} customers.`);
+  console.log(
+    `Seed complete for ${seedCustomers.length} customers and ${seedPolicies.length} policies.`,
+  );
 };
 
 main()

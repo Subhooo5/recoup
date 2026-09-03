@@ -1,9 +1,14 @@
-import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { CaseDetail } from "@/components/case/case-detail";
+import { PageShell } from "@/components/layout/page-shell";
 
 export default async function CaseDetailPage({
   params,
 }: PageProps<"/cases/[id]">) {
   const { id } = await params;
 
-  return <PlaceholderPage title={`Case ${id}`} />;
+  return (
+    <PageShell>
+      <CaseDetail caseId={id} />
+    </PageShell>
+  );
 }

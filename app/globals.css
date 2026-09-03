@@ -9,6 +9,8 @@
   --color-foreground: var(--foreground);
   --color-brand-indigo: var(--indigo);
   --color-brand-emerald: var(--emerald);
+  --color-brand-indigo-readable: color-mix(in oklch, var(--indigo), var(--foreground) 26%);
+  --color-brand-emerald-readable: color-mix(in oklch, var(--emerald), var(--foreground) 32%);
   --font-sans: var(--font-inter);
   --font-heading: var(--font-sora);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -154,8 +156,9 @@
 }
 
 @layer components {
-  .gradient-border-frame {
-    background: conic-gradient(
+  .gradient-border-frame,
+  .gradient-border-frame-on-hover {
+    --gradient-border-sweep: conic-gradient(
       from var(--gradient-border-angle),
       var(--border) 0deg,
       var(--border) 190deg,
@@ -163,11 +166,25 @@
       var(--emerald) 305deg,
       var(--border) 360deg
     );
+  }
+
+  .gradient-border-frame {
+    background: var(--gradient-border-sweep);
+    animation: gradient-border-travel 9s linear infinite;
+  }
+
+  .gradient-border-frame-on-hover {
+    background: var(--border);
+  }
+
+  .group:hover .gradient-border-frame-on-hover {
+    background: var(--gradient-border-sweep);
     animation: gradient-border-travel 9s linear infinite;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .gradient-border-frame {
+    .gradient-border-frame,
+    .group:hover .gradient-border-frame-on-hover {
       animation: none;
     }
   }

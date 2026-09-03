@@ -30,6 +30,7 @@ model WebhookEvent {
   eventType       String    @map("event_type")
   accountId       String?   @map("account_id")
   payload         Json
+  status          String    @default("received")
   receivedAt      DateTime  @default(now()) @map("received_at")
   processedAt     DateTime? @map("processed_at")
 
@@ -38,7 +39,7 @@ model WebhookEvent {
 
 model PaymentEvent {
   id                String    @id @default(cuid())
-  razorpayPaymentId String    @map("razorpay_payment_id")
+  razorpayPaymentId String    @unique @map("razorpay_payment_id")
   razorpayOrderId   String?   @map("razorpay_order_id")
   eventType         String    @map("event_type")
   customerId        String?   @map("customer_id")
@@ -58,7 +59,6 @@ model PaymentEvent {
   rawPayload        Json      @map("raw_payload")
   createdAt         DateTime  @default(now()) @map("created_at")
 
-  @@index([razorpayPaymentId])
   @@index([customerId])
   @@map("payment_event")
 }
@@ -66,6 +66,7 @@ model PaymentEvent {
 model CheckoutSession {
   id                    String    @id @default(cuid())
   razorpayOrderId       String    @unique @map("razorpay_order_id")
+  razorpayPaymentLinkId String?   @unique @map("razorpay_payment_link_id")
   customerId            String?   @map("customer_id")
   customer              Customer? @relation(fields: [customerId], references: [id])
   amount                Int
@@ -130,23 +131,25 @@ model RecoveryCase {
 
   recoveryActions RecoveryAction[]
 
+  @@unique([pipeline, sourceId])
   @@index([customerId])
   @@index([status])
   @@map("recovery_case")
 }
 
 model RecoveryAction {
-  id              String       @id @default(cuid())
-  recoveryCaseId  String       @map("recovery_case_id")
-  recoveryCase    RecoveryCase @relation(fields: [recoveryCaseId], references: [id])
-  actionType      String       @map("action_type")
-  decisionJson    Json         @map("decision_json")
-  gateResult      Json         @map("gate_result")
-  status          String
-  outcome         String?
-  amountRecovered Int?         @map("amount_recovered")
-  executedAt      DateTime?    @map("executed_at")
-  createdAt       DateTime     @default(now()) @map("created_at")
+  id                    String       @id @default(cuid())
+  recoveryCaseId        String       @map("recovery_case_id")
+  razorpayPaymentLinkId String?      @unique @map("razorpay_payment_link_id")
+  recoveryCase          RecoveryCase @relation(fields: [recoveryCaseId], references: [id])
+  actionType            String       @map("action_type")
+  decisionJson          Json         @map("decision_json")
+  gateResult            Json         @map("gate_result")
+  status                String
+  outcome               String?
+  amountRecovered       Int?         @map("amount_recovered")
+  executedAt            DateTime?    @map("executed_at")
+  createdAt             DateTime     @default(now()) @map("created_at")
 
   communicationEvents CommunicationEvent[]
 
