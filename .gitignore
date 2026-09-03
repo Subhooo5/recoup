@@ -46,4 +46,7 @@ AGENTS.md
 CLAUDE.md
 DESIGN.md
 
-!.env.example.claude/
+# claude
+.claude/
+
+!.env.example
