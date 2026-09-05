@@ -2,10 +2,9 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const placeholderEmailNotice = [
-  "SEED NOTICE: every customer email below is a placeholder on @recoup-app.dev.",
-  "Swap these for real inboxes you control before the demo, or recovery emails will",
-  "be sent to addresses that do not exist and every send will bounce.",
+const seedEmailNotice = [
+  "SEED NOTICE: every customer email below is a real, reachable inbox.",
+  "Running a pipeline that reaches execution will send genuine recovery mail to it.",
 ].join("\n");
 
 const daysAgo = (days: number) =>
@@ -16,7 +15,7 @@ const daysFromNow = (days: number) =>
 
 const seedCustomers = [
   {
-    name: "Subhodeep Chatterjee",
+    name: "Subhodeep",
     email: "subhodeep17102005@gmail.com",
     phone: "+917980564106",
     paymentEvents: [
@@ -88,7 +87,7 @@ const seedCustomers = [
     },
   },
   {
-    name: "Diya Sharma",
+    name: "Rick",
     email: "subhodeepop@gmail.com",
     phone: "+919000000002",
     paymentEvents: [
@@ -178,8 +177,8 @@ const seedCustomers = [
     },
   },
   {
-    name: "Rohan Iyer",
-    email: "demo.customer.3@recoup-app.dev",
+    name: "Sutapa",
+    email: "sutapa29111967@gmail.com",
     phone: "+919000000003",
     paymentEvents: [
       {
@@ -250,8 +249,8 @@ const seedCustomers = [
     },
   },
   {
-    name: "Ananya Nair",
-    email: "demo.customer.4@recoup-app.dev",
+    name: "Dipankar",
+    email: "dipankar20101964@gmail.com",
     phone: "+919000000004",
     paymentEvents: [
       {
@@ -339,78 +338,6 @@ const seedCustomers = [
       createdAt: daysAgo(433),
     },
   },
-  {
-    name: "Kabir Rao",
-    email: "demo.customer.5@recoup-app.dev",
-    phone: "+919000000005",
-    paymentEvents: [
-      {
-        razorpayPaymentId: "pay_DemoSeedKabir01",
-        razorpayOrderId: "order_DemoSeedKabir01",
-        eventType: "payment.captured",
-        amount: 199900,
-        currency: "INR",
-        method: "wallet",
-        status: "captured",
-        errorCode: null,
-        errorDescription: null,
-        errorReason: null,
-        errorSource: null,
-        errorStep: null,
-        razorpayCreatedAt: daysAgo(31),
-      },
-      {
-        razorpayPaymentId: "pay_DemoSeedKabir02",
-        razorpayOrderId: "order_DemoSeedKabir02",
-        eventType: "payment.failed",
-        amount: 459900,
-        currency: "INR",
-        method: "upi",
-        status: "failed",
-        errorCode: "BAD_REQUEST_ERROR",
-        errorDescription: "The payment collect request timed out before approval.",
-        errorReason: "payment_timed_out",
-        errorSource: "customer",
-        errorStep: "payment_authentication",
-        razorpayCreatedAt: daysAgo(2),
-      },
-    ],
-    checkoutSessions: [
-      {
-        razorpayOrderId: "order_DemoSeedKabir02",
-        amount: 459900,
-        amountPaid: 0,
-        amountDue: 459900,
-        currency: "INR",
-        receipt: "receipt_demo_kabir_02",
-        status: "attempted",
-        attempts: 1,
-        cartValue: 459900,
-        itemsSummary: "Camera body x1, Prime lens x1",
-        paymentMethodSelected: "upi",
-        frontendSessionId: "session_demo_kabir_02",
-        createdAt: daysAgo(2),
-        lastCheckedAt: daysAgo(1),
-        abandonedAt: null,
-        recoveredAt: null,
-      },
-    ],
-    subscription: {
-      razorpaySubscriptionId: "sub_DemoSeedKabir01",
-      planId: "plan_TXDM7EOD0I52PE",
-      status: "active",
-      authAttempts: 0,
-      totalCount: 12,
-      paidCount: 1,
-      remainingCount: 11,
-      chargeAt: daysFromNow(27),
-      currentStart: daysAgo(3),
-      currentEnd: daysFromNow(27),
-      lastFailureCode: null,
-      lastFailureReason: null,
-      createdAt: daysAgo(33),
-    },
-  },
 ];
 
 const seedPolicies = [
@@ -493,7 +420,7 @@ const clearPreviousSeedData = async (customerIds: string[]) => {
 };
 
 const main = async () => {
-  console.log(placeholderEmailNotice);
+  console.log(seedEmailNotice);
   console.log("");
 
   const previouslySeeded = await prisma.customer.findMany({

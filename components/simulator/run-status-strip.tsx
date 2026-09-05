@@ -51,6 +51,9 @@ const readDetailString = (detail: unknown, key: string) => {
   return typeof value === "string" ? value : null;
 };
 
+const formatConfidencePercentage = (confidence: number) =>
+  `${Math.round(Math.min(Math.max(confidence, 0), 1) * 100)}%`;
+
 const readDetailNumber = (detail: unknown, key: string) => {
   if (detail === null || typeof detail !== "object") {
     return null;
@@ -172,6 +175,9 @@ export function RunStatusStrip({ target }: RunStatusStripProps) {
   const diagnosisEntry = entries.find(
     (entry) => entry.action === "diagnosis_produced",
   );
+  const diagnosisConfidence = diagnosisEntry
+    ? readDetailNumber(diagnosisEntry.detail, "confidence")
+    : null;
   const gateEntry = entries.find((entry) => entry.action === "gate_evaluated");
   const actionEntry = entries.find((entry) =>
     entry.action.startsWith("action_"),
@@ -269,9 +275,15 @@ export function RunStatusStrip({ target }: RunStatusStripProps) {
               <dt className="text-muted-foreground">Diagnosis</dt>
               <dd className="text-right font-medium">
                 {readDetailString(diagnosisEntry.detail, "diagnosis") ?? "—"}
-                {readDetailNumber(diagnosisEntry.detail, "confidence") !== null
-                  ? ` · ${readDetailNumber(diagnosisEntry.detail, "confidence")}`
-                  : ""}
+              </dd>
+            </div>
+          ) : null}
+
+          {diagnosisConfidence !== null ? (
+            <div className="flex justify-between gap-3">
+              <dt className="text-muted-foreground">Confidence</dt>
+              <dd className="text-right font-medium tabular-nums">
+                {formatConfidencePercentage(diagnosisConfidence)}
               </dd>
             </div>
           ) : null}

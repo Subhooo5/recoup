@@ -17,7 +17,7 @@ export function GetStartedButton({ className }: GetStartedButtonProps) {
         className,
       )}
     >
-      <Link href="/simulator">Get Started</Link>
+      <Link href="/simulator?pipeline=payment-degradation">Get Started</Link>
     </Button>
   );
 }

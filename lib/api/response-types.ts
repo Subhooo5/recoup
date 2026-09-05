@@ -123,3 +123,34 @@ export type PolicyItem = {
 export type PolicyListResponse = {
   items: PolicyItem[];
 };
+
+export type MetricsPipelineFunnel = {
+  pipeline: string;
+  detected: number;
+  diagnosed: number;
+  allowed: number;
+  executed: number;
+  recovered: number;
+};
+
+export type MetricsPipelineBreakdown = {
+  pipeline: string;
+  cases: number;
+  amountAtRisk: number;
+  amountRecovered: number;
+  topDiagnosis: string | null;
+};
+
+export type MetricsOverviewResponse = {
+  totals: {
+    amountAtRisk: number;
+    amountRecovered: number;
+    recoveryRatePercent: number;
+    casesOpened: number;
+    actionsExecuted: number;
+    actionsBlocked: number;
+  };
+  funnel: MetricsPipelineFunnel[];
+  outcomeSplit: Record<string, number>;
+  byPipeline: MetricsPipelineBreakdown[];
+};

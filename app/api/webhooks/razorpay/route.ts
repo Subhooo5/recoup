@@ -218,7 +218,6 @@ const normalizePaymentLink = async (webhookBody: RazorpayWebhookBody) => {
     await prisma.recoveryAction.update({
       where: { id: recoveryAction.id },
       data: {
-        status: "completed",
         outcome: paymentLinkWasPaid ? "recovered" : "expired",
         executedAt: recoveryAction.executedAt ?? new Date(),
         amountRecovered,

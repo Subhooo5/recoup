@@ -166,9 +166,9 @@ export function LiveFeed() {
   }
 
   return (
-    <div className="grid gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-4">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-wrap items-center gap-4">
           <span className={cn("flex items-center gap-2 text-sm font-medium", connectionTone)}>
             <span className="relative flex size-2">
               {connectionState === "live" ? (
@@ -242,7 +242,7 @@ export function LiveFeed() {
           }
         />
       ) : (
-        <div className="relative">
+        <div className="relative min-w-0">
           <AnimatePresence>
             {withheldCount > 0 ? (
               <motion.button

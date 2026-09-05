@@ -10,6 +10,7 @@ import {
 import {
   PipelineSelect,
   resolveSimulatorPipelineFromSlug,
+  simulatorPipelines,
   type SimulatorPipeline,
 } from "@/components/simulator/pipeline-select";
 import {
@@ -26,9 +27,38 @@ import {
   type RunTarget,
 } from "@/components/simulator/run-status-strip";
 import { TestCardHelper } from "@/components/simulator/test-card-helper";
+import { cn } from "@/lib/utils";
 
 const inputClassName =
   "h-10 rounded-xl border border-input bg-background px-3 text-sm transition-colors duration-200 focus:border-brand-indigo focus:outline-none disabled:cursor-not-allowed disabled:opacity-60";
+
+type PipelineRunState = {
+  runTarget: RunTarget | null;
+  checkoutHandoff: RazorpayOrderHandoff | null;
+  modeNote: string | null;
+  submitError: string | null;
+  runKey: number;
+};
+
+const emptyRunState: PipelineRunState = {
+  runTarget: null,
+  checkoutHandoff: null,
+  modeNote: null,
+  submitError: null,
+  runKey: 0,
+};
+
+const amountPlaceholders: Record<SimulatorPipeline, string> = {
+  payment: "e.g. 24999",
+  checkout: "e.g. 45900",
+  subscription: "e.g. 199",
+};
+
+const initialRunStates: Record<SimulatorPipeline, PipelineRunState> = {
+  payment: emptyRunState,
+  checkout: emptyRunState,
+  subscription: emptyRunState,
+};
 
 export function SimulatorForm() {
   const searchParams = useSearchParams();
@@ -38,24 +68,34 @@ export function SimulatorForm() {
       "subscription",
   );
   const [customerId, setCustomerId] = useState("");
-  const [amountRupees, setAmountRupees] = useState("2499");
-  const [itemsSummary, setItemsSummary] = useState("Noise cancelling headphones x1");
+  const [amountRupees, setAmountRupees] = useState("");
+  const [itemsSummary, setItemsSummary] = useState("");
   const [errorCode, setErrorCode] = useState<RazorpayErrorCode>("BAD_REQUEST_ERROR");
   const [errorReason, setErrorReason] =
     useState<RazorpayErrorReason>("insufficient_funds");
 
   const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [runTarget, setRunTarget] = useState<RunTarget | null>(null);
-  const [checkoutHandoff, setCheckoutHandoff] =
-    useState<RazorpayOrderHandoff | null>(null);
-  const [modeNote, setModeNote] = useState<string | null>(null);
-  const [runKey, setRunKey] = useState(0);
+  const [runStates, setRunStates] =
+    useState<Record<SimulatorPipeline, PipelineRunState>>(initialRunStates);
+
+  const activeRunState = runStates[pipeline];
+
+  const updateRunState = (
+    targetPipeline: SimulatorPipeline,
+    changes: Partial<PipelineRunState>,
+  ) =>
+    setRunStates((previous) => ({
+      ...previous,
+      [targetPipeline]: { ...previous[targetPipeline], ...changes },
+    }));
 
   const amountPaise = Math.round(Number(amountRupees) * 100);
   const amountIsValid =
     Number.isFinite(amountPaise) && Number.isInteger(amountPaise) && amountPaise >= 100;
-  const canSubmit = Boolean(customerId) && amountIsValid && !submitting;
+  const itemsSummaryIsValid =
+    pipeline !== "checkout" || itemsSummary.trim().length > 0;
+  const canSubmit =
+    Boolean(customerId) && amountIsValid && itemsSummaryIsValid && !submitting;
 
   const submitSimulation = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -64,17 +104,21 @@ export function SimulatorForm() {
       return;
     }
 
+    const submittedPipeline = pipeline;
+
     setSubmitting(true);
-    setSubmitError(null);
-    setCheckoutHandoff(null);
-    setRunTarget(null);
-    setModeNote(null);
-    setRunKey((previous) => previous + 1);
+    updateRunState(submittedPipeline, {
+      submitError: null,
+      checkoutHandoff: null,
+      runTarget: null,
+      modeNote: null,
+      runKey: runStates[submittedPipeline].runKey + 1,
+    });
 
     const submittedAt = new Date().toISOString();
 
     try {
-      if (pipeline === "payment") {
+      if (submittedPipeline === "payment") {
         const response = await fetch("/api/simulator/payment", {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -86,14 +130,15 @@ export function SimulatorForm() {
           throw new Error(body.error ?? "Simulation failed");
         }
 
-        setCheckoutHandoff(body as RazorpayOrderHandoff);
-        setRunTarget({ kind: "customer", customerId, since: submittedAt });
-        setModeNote(
-          "Razorpay will fire the real payment.failed webhook once the payment is declined. Nothing is bypassed.",
-        );
+        updateRunState(submittedPipeline, {
+          checkoutHandoff: body as RazorpayOrderHandoff,
+          runTarget: { kind: "customer", customerId, since: submittedAt },
+          modeNote:
+            "Razorpay will fire the real payment.failed webhook once the payment is declined. Nothing is bypassed.",
+        });
       }
 
-      if (pipeline === "checkout") {
+      if (submittedPipeline === "checkout") {
         const response = await fetch("/api/simulator/checkout", {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -105,17 +150,15 @@ export function SimulatorForm() {
           throw new Error(body.error ?? "Simulation failed");
         }
 
-        setRunTarget(
-          body.caseId
+        updateRunState(submittedPipeline, {
+          runTarget: body.caseId
             ? { kind: "case", caseId: body.caseId }
             : { kind: "customer", customerId, since: submittedAt },
-        );
-        setModeNote(
-          `Order ${body.orderId} created and reconciled immediately. Only the 30 minute abandonment threshold was bypassed.`,
-        );
+          modeNote: `Order ${body.orderId} created and reconciled immediately. Only the 30 minute abandonment threshold was bypassed.`,
+        });
       }
 
-      if (pipeline === "subscription") {
+      if (submittedPipeline === "subscription") {
         const response = await fetch("/api/simulator/subscription", {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -133,29 +176,28 @@ export function SimulatorForm() {
           throw new Error(body.error ?? "Simulation failed");
         }
 
-        setRunTarget(
-          body.caseId
+        updateRunState(submittedPipeline, {
+          runTarget: body.caseId
             ? { kind: "case", caseId: body.caseId }
             : { kind: "customer", customerId, since: submittedAt },
-        );
-        setModeNote(
-          `Signed webhook ${body.razorpayEventId} posted to the app's own endpoint and answered ${body.webhookStatus}. Signature verification, dedupe and normalization all ran for real.`,
-        );
+          modeNote: `Signed webhook ${body.razorpayEventId} posted to the app's own endpoint and answered ${body.webhookStatus}. Signature verification, dedupe and normalization all ran for real.`,
+        });
       }
     } catch (error) {
-      setSubmitError(
-        error instanceof Error ? error.message : "Simulation failed",
-      );
+      updateRunState(submittedPipeline, {
+        submitError:
+          error instanceof Error ? error.message : "Simulation failed",
+      });
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
       <form
         onSubmit={submitSimulation}
-        className="grid gap-5 rounded-xl border border-border p-5"
+        className="grid content-start gap-5 rounded-xl border border-border p-5"
       >
         <PipelineSelect
           value={pipeline}
@@ -178,11 +220,12 @@ export function SimulatorForm() {
             min="1"
             step="0.01"
             value={amountRupees}
+            placeholder={amountPlaceholders[pipeline]}
             disabled={submitting}
             onChange={(event) => setAmountRupees(event.target.value)}
             className={inputClassName}
           />
-          {!amountIsValid ? (
+          {amountRupees !== "" && !amountIsValid ? (
             <span className="text-xs text-destructive">
               Enter an amount of at least ₹1.00.
             </span>
@@ -195,6 +238,7 @@ export function SimulatorForm() {
             <input
               type="text"
               value={itemsSummary}
+              placeholder="e.g. Wireless headphones x1"
               disabled={submitting}
               onChange={(event) => setItemsSummary(event.target.value)}
               className={inputClassName}
@@ -229,27 +273,44 @@ export function SimulatorForm() {
           {submitting ? "Running…" : "Run simulation"}
         </motion.button>
 
-        {submitError ? (
+        {activeRunState.submitError ? (
           <p className="rounded-xl border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-            {submitError}
+            {activeRunState.submitError}
           </p>
         ) : null}
       </form>
 
       <div className="grid content-start gap-4">
-        {modeNote ? (
-          <p className="rounded-xl border border-brand-emerald/40 bg-brand-emerald/5 px-3 py-2 text-xs">
-            {modeNote}
-          </p>
-        ) : null}
+        {simulatorPipelines.map(({ value }) => {
+          const runState = runStates[value];
 
-        {checkoutHandoff ? (
-          <RazorpayCheckoutEmbed handoff={checkoutHandoff} />
-        ) : null}
+          return (
+            <div
+              key={value}
+              className={cn(
+                "grid content-start gap-4",
+                value === pipeline ? undefined : "hidden",
+              )}
+            >
+              {runState.modeNote ? (
+                <p className="rounded-xl border border-brand-emerald/40 bg-brand-emerald/5 px-3 py-2 text-xs">
+                  {runState.modeNote}
+                </p>
+              ) : null}
 
-        {pipeline === "payment" ? <TestCardHelper /> : null}
+              {runState.checkoutHandoff ? (
+                <RazorpayCheckoutEmbed handoff={runState.checkoutHandoff} />
+              ) : null}
 
-        <RunStatusStrip key={runKey} target={runTarget} />
+              {value === "payment" ? <TestCardHelper /> : null}
+
+              <RunStatusStrip
+                key={runState.runKey}
+                target={runState.runTarget}
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );
