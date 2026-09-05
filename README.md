@@ -15,37 +15,37 @@ All three pipelines share the same shape and differ only in the agent stage. A *
 
 ![Recoup architecture](./public/recoupArch.png)
 
-### 1️⃣ Payment Degradation
+### • Payment Degradation
 
 Triggered by a real `payment.failed` webhook from Razorpay. The agent reads the failed payment's error code, error reason and method, the customer's recent payment history, and any prior recovery attempts on the case, then returns a diagnosis of `gateway_timeout`, `insufficient_funds`, `bank_decline`, `risk_block` or `other`. It can propose sending a payment link, retrying on an alternate route, escalating to a human, or doing nothing.
 
-### 2️⃣ Checkout Drop-off
+### • Checkout Drop-off
 
 Triggered by the reconciliation worker rather than a webhook — it finds checkout sessions stuck in `created` or `attempted` past the abandonment threshold and fetches authoritative order state from Razorpay. The agent reads cart value, items, the payment method selected and the customer's prior abandonment count, and diagnoses `friction`, `price_hesitation`, `payment_method_issue` or `no_clear_cause`. Doing nothing is a first-class option here, not a fallback.
 
-### 3️⃣ Failed Subscription
+### • Failed Subscription
 
 Triggered by a subscription renewal charge failing. The agent reads `authAttempts`, `chargeAt`, the last failure code and reason, plan value, and how much of the plan has already been paid, then diagnoses `transient_failure`, `stale_payment_method` or `churn_signal`. It can request a card update, send a payment link, escalate, or do nothing — never a retry, because Razorpay owns retry timing and the agent only proposes the parallel communication track.
 
 <h2 align="center">💬 FAQ</h2>
 
-**What does Recoup actually do?**
+- **What does Recoup actually do?**
 
 It watches for payments, checkouts, and subscriptions that are about to lose you money, figures out why, and tries to win the sale back automatically.
 
-**Is this connected to real money?**
+- **Is this connected to real money?**
 
 It runs on Razorpay's test mode, so every action is real infrastructure; just no real cash changes hands.
 
-**Will it actually email customers?**
+- **Will it actually email customers?**
 
 Yes, every recovery action that gets approved sends a real email, using a real Razorpay payment link.
 
-**What stops it from spamming someone?**
+- **What stops it from spamming someone?**
 
 A set of rules: Cooldowns, Spend limits, and Confidence checks - block or hold any action before it reaches a customer. You can see exactly which rule fired for every case on the Audit page.
 
-**Can I try it myself?**
+- **Can I try it myself?**
 
 Yes, head to the Simulator, pick a scenario, and watch the full detect, diagnose, decide, execute loop run in real time.
 
@@ -57,7 +57,7 @@ Yes, head to the Simulator, pick a scenario, and watch the full detect, diagnose
 - **OpenAI Agents SDK** (`@openai/agents`) for the three diagnosis agents, with Zod schemas as the structured output contract
 - **Razorpay** for orders, payment links, plans and webhooks
 - **Resend** for recovery email
-- **TanStack Query** for the polling and filtered read surfaces, **motion** for animation, **Recharts** available for charting
+- **TanStack Query** for the polling and filtered read surfaces, **motion** for animation
 
 <h2 align="center">🚀 Live demo</h2>
 
